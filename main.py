@@ -5,6 +5,11 @@ from t import TOKEN
 import telebot
 
 
+class LenException(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+
+
 def generate_password(length):
     characters = string.ascii_letters + string.digits + string.punctuation
     password = ''.join(random.choice(characters) for i in range(length))
@@ -38,9 +43,17 @@ def state(message: telebot.types.Message):
     try:
         with bot.retrieve_data(message.from_user.id) as data:
             data['length'] = message.text
-        length = int(data['length'])
+            length = int(data['length'])
+        if length <= 0:
+            raise LenException("Длина пароля не может быть меньше или равна нулю!")
         result = generate_password(length)
-    except ValueError:
+    except LenException:
+        bot.delete_state(message.from_user.id, message.chat.id)
+        bot.send_message(message.chat.id, text="<b>Длина пароля не может быть меньше или равна нулю!</b>", parse_mode='HTML')
+        time.sleep(1)
+        bot.send_message(message.chat.id, text="Введите новое значение:")
+        bot.set_state(message.from_user.id, LenState.length, message.chat.id)
+    except Exception:
         bot.delete_state(message.from_user.id, message.chat.id)
         bot.send_message(message.chat.id, text="<b>Введено некорректное значение!</b>", parse_mode='HTML')
         time.sleep(1)
