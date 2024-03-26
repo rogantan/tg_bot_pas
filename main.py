@@ -1,8 +1,8 @@
+import telebot
 import random
 import string
 import time
 from t import TOKEN
-import telebot
 
 
 class LenException(Exception):
