@@ -6,7 +6,18 @@ from telebot.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, C
 from functions import gen_markup_media, gen_markup_bool, User, Newsletter, Opros
 from db import (add_user, select_users_id, select_user, select_admin_id, select_admins_id, add_newsletter,
                 select_newsletters, save_variants, save_question, select_questions, get_question, get_variants,
-                update_statistic, select_total_statistic)
+                update_statistic, select_total_statistic, poisk_slet)
+
+
+def is_admin(func):
+    def wrapper(*args, **kwargs):
+        message = args[0]
+        admins_list = select_admins_id(str(message.from_user.id))
+        if admins_list is not None:
+            func(*args, **kwargs)
+        else:
+            bot.reply_to(message, text=f"У вас {form.hbold('нет прав')} на эту команду и отправку фото..", parse_mode='HTML')
+    return wrapper
 
 
 @bot.message_handler(commands=['start'])
@@ -18,28 +29,27 @@ def send_welcome(message: Message):
         bot.send_message(chat_id=admin_id[0],
                          text=f'Написал пользователь id - {message.from_user.id}, имя - {message.from_user.first_name}')
         add_user(str(message.from_user.id), message.from_user.username, message.from_user.first_name)
-    else:
-        bot.send_message(message.from_user.id, text=f'Меня зовут {form.hitalic("Екатерина Полякова")}', parse_mode='HTML')
-        time.sleep(1)
-        bot.send_message(message.from_user.id, text=f'Я открыла для себя {form.hbold("Access Bars")} в 2017 году. До знакомства с '
-                                                f'{form.hbold("Access Bars")} я:\n'
-                                                f'- рисовала энергетические картины,\n'
-                                                f'- вела занятия по лицевой гимнастике,\n'
-                                                f'- занималась аромотерапией,\n'
-                                                f'- давала сеансы массажа по методике Рейки Дао Дэ Ки.', parse_mode='HTML')
-        time.sleep(2)
-        bot.send_message(message.from_user.id, text=f'{form.hbold("Access Bars")} помог мне вывести мои знания на новый уровень. '
-                                                f'Невероятный набор инструментов для работы с собой и другими людьми, '
-                                                f'неограниченные возможности для {form.hitalic("трансформации")}, восхитительные изменения, '
-                                                f'которые я наблюдаю в своей жизни и жизни своих клиентов, окрыляют. '
-                                                f'У меня горячее желание {form.hitalic("развиваться")} в данном направлении и делиться своими знаниями с миром.',
+    bot.send_message(message.from_user.id, text=f'Меня зовут {form.hitalic("Екатерина Полякова")}', parse_mode='HTML')
+    time.sleep(1)
+    bot.send_message(message.from_user.id, text=f'Я открыла для себя {form.hbold("Access Bars")} в 2017 году. До знакомства с '
+                                            f'{form.hbold("Access Bars")} я:\n'
+                                            f'- рисовала энергетические картины,\n'
+                                            f'- вела занятия по лицевой гимнастике,\n'
+                                            f'- занималась аромотерапией,\n'
+                                            f'- давала сеансы массажа по методике Рейки Дао Дэ Ки.', parse_mode='HTML')
+    time.sleep(2)
+    bot.send_message(message.from_user.id, text=f'{form.hbold("Access Bars")} помог мне вывести мои знания на новый уровень. '
+                                            f'Невероятный набор инструментов для работы с собой и другими людьми, '
+                                            f'неограниченные возможности для {form.hitalic("трансформации")}, восхитительные изменения, '
+                                            f'которые я наблюдаю в своей жизни и жизни своих клиентов, окрыляют. '
+                                            f'У меня горячее желание {form.hitalic("развиваться")} в данном направлении и делиться своими знаниями с миром.',
                         parse_mode='HTML')
-        time.sleep(3)
-        bot.send_message(message.from_user.id, text=f'Я буду рада встретиться с каждым из Вас:\n'
-                                                f'- {form.hbold("на сессии")} (обещаю, это будет лучший энергетический массаж в Вашей жизни :)),\n'
-                                                f'- {form.hbold("на обучении")} (Вы сможете дарить хорошее настроение и позитивные изменения в жизни близким Вам людям),\n'
-                                                f'- {form.hbold("на Встречах знакомств с инструментами Аксесс")} (я подробнее расскажу Вам об Access Bars, а Вы вживую увидите мою энергетику)',
-                        parse_mode='HTML')
+    time.sleep(3)
+    bot.send_message(message.from_user.id, text=f'Я буду рада встретиться с каждым из Вас:\n'
+                                            f'- {form.hbold("на сессии")} (обещаю, это будет лучший энергетический массаж в Вашей жизни :)),\n'
+                                            f'- {form.hbold("на обучении")} (Вы сможете дарить хорошее настроение и позитивные изменения в жизни близким Вам людям),\n'
+                                            f'- {form.hbold("на Встречах знакомств с инструментами Аксесс")} (я подробнее расскажу Вам об Access Bars, а Вы вживую увидите мою энергетику)',
+                    parse_mode='HTML')
     time.sleep(5)
     bot.send_message(message.from_user.id, text="Если вы хотите лично мне написать, нажмите команду /write")
 
@@ -66,7 +76,7 @@ def write_purpose(message: Message):
     bot.send_message(message.from_user.id, text="Спасибо большое! Я свяжусь с вами в ближайшее время :)")
     bot.send_message(chat_id=admins_list[0], text=f"Пользователь @{message.from_user.username} хочет в вами связаться\n"
                                        f"Имя - {data['name']}, цели - {data['purpose']}")
-    bot.delete_state(message.from_user.id, message.from_user.id)
+    bot.delete_state(message.from_user.id, message.chat.id)
 
 
 @bot.message_handler(commands=['social_media'])
@@ -81,22 +91,25 @@ def channel(message: Message):
     bot.send_message(message.from_user.id, text=f"{form.hitalic('Добро пожаловать!')}", reply_markup=markup, parse_mode='HTML')
 
 
+@is_admin
 @bot.message_handler(commands=['newsletter'])
 def newsletter(message: Message):
-    admins_list = select_admins_id(str(message.from_user.id))
-    if admins_list is not None:
-        bot.send_message(message.from_user.id, text="Введите текст рассылки:")
-        bot.set_state(message.from_user.id, Newsletter.text)
-    else:
-        bot.send_message(message.from_user.id, text=f"У вас {form.hbold('нет прав')} на эту команду...", parse_mode='HTML')
+    bot.send_message(message.from_user.id, text="Введите текст рассылки:")
+    bot.set_state(message.from_user.id, Newsletter.text)
+    # admins_list = select_admins_id(str(message.from_user.id))
+    # if admins_list is not None:
+    #
+    # else:
+    #     bot.send_message(message.from_user.id, text=f"У вас {form.hbold('нет прав')} на эту команду...", parse_mode='HTML')
 
 
+@is_admin
 @bot.message_handler(commands=['opros'])
 def create_opros(message: Message):
-    admins_list = select_admins_id(str(message.from_user.id))
-    if admins_list is not None:
-        bot.send_message(message.from_user.id, text="Введите текст вопроса")
-        bot.set_state(message.from_user.id, Opros.question_text)
+    # admins_list = select_admins_id(str(message.from_user.id))
+    # if admins_list is not None:
+    bot.send_message(message.from_user.id, text="Введите текст вопроса")
+    bot.set_state(message.from_user.id, Opros.question_text)
 
 
 @bot.message_handler(state=Opros.question_text)
@@ -132,51 +145,87 @@ def state_text(message: Message):
         mess['text'] = message.text
     date = datetime.now()
     add_newsletter(mess['text'], date, str(message.from_user.id))
-    users_list = select_users_id()
-    for user in users_list:
-        bot.send_message(chat_id=user[0], text=mess['text'], parse_mode='HTML')
-    bot.send_message(message.from_user.id, text="Фотографию добавляем?", reply_markup=gen_markup_bool("yes_p", "no_p"))
+    bot.send_message(message.from_user.id, text="Добавлено!")
+    bot.delete_state(message.from_user.id, message.chat.id)
 
 
+@is_admin
 @bot.message_handler(commands=['send_opros'])
 def send_opros(message: Message):
     questions = select_questions()
-    arr = []
-    for question in questions:
-        arr.append(f"{question[0]}) {question[1]}\n")
-    text = "".join(arr)
-    bot.send_message(message.from_user.id, text=text)
-    bot.send_message(message.from_user.id, text="Введите id вопроса, который хотите отправить")
-    bot.set_state(message.from_user.id, Opros.num_question)
+    if len(questions) == 0:
+        bot.send_message(message.from_user.id, text="Опросов нет")
+    else:
+        arr = []
+        for question in questions:
+            arr.append(f"{question[0]}) {question[1]}\n")
+        text = "".join(arr)
+        bot.send_message(message.from_user.id, text=text)
+        bot.send_message(message.from_user.id, text="Введите id вопроса, который хотите отправить")
+        bot.set_state(message.from_user.id, Opros.num_question)
 
 
 @bot.message_handler(state=Opros.num_question)
 def num_question(message: Message):
     with bot.retrieve_data(message.from_user.id) as text:
         text['num'] = message.text
-    num = int(message.text)
-    question = get_question(num)
-    variants = get_variants(num)
-    text = f"{question[0]}\n"
-    markup = InlineKeyboardMarkup()
-    for var in variants:
-        markup.add(InlineKeyboardButton(text=f"{var[0]}", callback_data=f"{var[1]}"))
-    users = select_users_id()
-    for user in users:
-        bot.send_message(chat_id=user[0], text=text, reply_markup=markup)
-    bot.delete_state(message.from_user.id, message.chat.id)
+    if not text['num'].isdigit():
+        bot.send_message(message.from_user.id, text="Вы ввели не число!\nВведите номер вопроса еще раз..")
+    else:
+        num = int(message.text)
+        question = get_question(num)
+        if question is None:
+            bot.send_message(message.from_user.id, text="Вопроса с таким номером не существует\nВведите номер вопроса еще раз..")
+        else:
+            variants = get_variants(num)
+            text = f"{question[0]}\n"
+            markup = InlineKeyboardMarkup()
+            for var in variants:
+                markup.add(InlineKeyboardButton(text=f"{var[0]}", callback_data=f"{var[1]}"))
+            users = select_users_id()
+            for user in users:
+                bot.send_message(chat_id=user[0], text=text, reply_markup=markup)
+            bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@bot.message_handler(commands=['all_newsletters'])
+@is_admin
+@bot.message_handler(commands=['send_newsletter'])
 def all_newsletters(message: Message):
     newsletters = select_newsletters()
-    arr = []
-    for newsletter in newsletters:
-        arr.append(f"{newsletter[0]}) {newsletter[1]}\nДата публикации {newsletter[2]}\n")
-    text = "\n".join(arr)
-    bot.send_message(message.from_user.id, text=text)
+    if len(newsletters) == 0:
+        bot.send_message(message.from_user.id, text="Рассылок нет")
+    else:
+        arr = []
+        for newsletter in newsletters:
+            arr.append(f"{newsletter[0]}) {newsletter[1]}\nДата публикации {newsletter[2]}\n")
+        text = "\n".join(arr)
+        bot.send_message(message.from_user.id, text=text)
+        bot.send_message(message.from_user.id, text="Введите id рассылки, которую хотите отправить")
+        bot.set_state(message.from_user.id, Newsletter.id)
 
 
+@bot.message_handler(state=Newsletter.id)
+def newslet_id(message: Message):
+    with bot.retrieve_data(message.from_user.id) as data:
+        data['id'] = message.text
+    if not data['id'].isdigit():
+        bot.send_message(message.from_user.id, text="Вы ввели не число!\nВведите номер рассылки еще раз..")
+    else:
+        num_int = int(data['id'])
+        newsletter = poisk_slet(num_int)
+        if num_int <= 0 or newsletter is None:
+            bot.send_message(message.from_user.id, text="Вопроса с таким номером не существует\nВведите номер рассылки еще раз..")
+        else:
+            users = select_users_id()
+            for user in users:
+                bot.send_message(chat_id=user[0], text=newsletter[0], parse_mode='MarkdownV2')
+            bot.send_message(message.from_user.id, text="Рассылка отправлена")
+            bot.send_message(message.from_user.id, text="Фотографию добавляем?",
+                             reply_markup=gen_markup_bool("yes_p", "no_p"))
+            bot.delete_state(message.from_user.id, message.chat.id)
+
+
+@is_admin
 @bot.message_handler(commands=['total_statistic'])
 def statistic(message: Message):
     users = select_users_id()
@@ -199,15 +248,19 @@ def callback(call: CallbackQuery):
         update_statistic(choice_id, str(call.from_user.id), date)
     else:
         statistic = select_total_statistic(call.data)
-        arr = []
-        arr.append(f" Статистика для @{statistic[0][0]}\n")
-        for stat in statistic:
-            arr.append(f"{stat[1]}\nОтвет - {stat[2]} {stat[3]}\n\n")
-        text = "".join(arr)
-        bot.send_message(call.from_user.id, text=text)
+        if len(statistic) == 0:
+            bot.send_message(call.from_user.id, text="Статистика пустая")
+        else:
+            arr = []
+            arr.append(f" Статистика для @{statistic[0][0]}\n")
+            for stat in statistic:
+                arr.append(f"{stat[1]}\nОтвет - {stat[2]} {stat[3]}\n\n")
+            text = "".join(arr)
+            bot.send_message(call.from_user.id, text=text)
     bot.delete_message(call.from_user.id, call.message.message_id)
 
 
+@is_admin
 @bot.message_handler(content_types=['photo'])
 def photo(message: Message):
     users_list = select_users_id()
@@ -217,6 +270,11 @@ def photo(message: Message):
              bot.send_photo(chat_id=user[0], photo=message.photo[-1].file_id)
     else:
         bot.send_message(message.from_user.id, text="Вы не можете отправлять фотографии...")
+
+
+@bot.message_handler(commands=['help_ai'])
+def help_ai(message: Message):
+    pass
 
 
 @bot.message_handler(state='*')

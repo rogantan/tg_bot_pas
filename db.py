@@ -219,3 +219,13 @@ def select_total_statistic(user_id: str) -> list:
     conn.commit()
     conn.close()
     return result
+
+
+def poisk_slet(slet_id: int) -> tuple:
+    conn = connection_to_db()
+    with conn.cursor() as cursor:
+        cursor.execute("SELECT text FROM newsletters WHERE id = %s", (slet_id, ))
+        result = cursor.fetchone()
+    conn.commit()
+    conn.close()
+    return result

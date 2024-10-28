@@ -9,6 +9,7 @@ class User(StatesGroup):
 
 class Newsletter(StatesGroup):
     text = State()
+    id = State()
 
 
 class Opros(StatesGroup):
