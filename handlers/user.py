@@ -13,10 +13,11 @@ def is_admin(func):
     def wrapper(*args, **kwargs):
         message = args[0]
         admins_list = select_admins_id(str(message.from_user.id))
-        if admins_list is not None:
-            func(*args, **kwargs)
+        if admins_list is None:
+            bot.reply_to(message, text=f"У вас {form.hbold('нет прав')} на эту команду и отправку фото..",
+                         parse_mode='HTML')
         else:
-            bot.reply_to(message, text=f"У вас {form.hbold('нет прав')} на эту команду и отправку фото..", parse_mode='HTML')
+            func(*args, **kwargs)
     return wrapper
 
 
@@ -103,8 +104,8 @@ def newsletter(message: Message):
     #     bot.send_message(message.from_user.id, text=f"У вас {form.hbold('нет прав')} на эту команду...", parse_mode='HTML')
 
 
-@is_admin
 @bot.message_handler(commands=['opros'])
+@is_admin
 def create_opros(message: Message):
     # admins_list = select_admins_id(str(message.from_user.id))
     # if admins_list is not None:
@@ -149,8 +150,9 @@ def state_text(message: Message):
     bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@is_admin
+
 @bot.message_handler(commands=['send_opros'])
+@is_admin
 def send_opros(message: Message):
     questions = select_questions()
     if len(questions) == 0:
@@ -188,8 +190,8 @@ def num_question(message: Message):
             bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@is_admin
 @bot.message_handler(commands=['send_newsletter'])
+@is_admin
 def all_newsletters(message: Message):
     newsletters = select_newsletters()
     if len(newsletters) == 0:
@@ -225,8 +227,8 @@ def newslet_id(message: Message):
             bot.delete_state(message.from_user.id, message.chat.id)
 
 
-@is_admin
 @bot.message_handler(commands=['total_statistic'])
+@is_admin
 def statistic(message: Message):
     users = select_users_id()
     markup = InlineKeyboardMarkup()
@@ -260,8 +262,8 @@ def callback(call: CallbackQuery):
     bot.delete_message(call.from_user.id, call.message.message_id)
 
 
-@is_admin
 @bot.message_handler(content_types=['photo'])
+@is_admin
 def photo(message: Message):
     users_list = select_users_id()
     admins_list = select_admins_id(str(message.from_user.id))
@@ -273,6 +275,7 @@ def photo(message: Message):
 
 
 @bot.message_handler(commands=['help_ai'])
+@is_admin
 def help_ai(message: Message):
     pass
 
