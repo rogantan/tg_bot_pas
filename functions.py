@@ -1,4 +1,5 @@
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+import telebot.types
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from telebot.handler_backends import State, StatesGroup
 
 
@@ -32,4 +33,15 @@ def gen_markup_bool(yes: str, no: str) -> InlineKeyboardMarkup:
     markup = InlineKeyboardMarkup()
     markup.add(InlineKeyboardButton("Да", callback_data=yes),
                InlineKeyboardButton("Нет", callback_data=no))
+    return markup
+
+
+def gen_cancel_markup() -> ReplyKeyboardMarkup:
+    markup = ReplyKeyboardMarkup(resize_keyboard=True)
+    markup.add(telebot.types.KeyboardButton("Отмена"))
+    return markup
+
+
+def gen_delete():
+    markup = ReplyKeyboardRemove()
     return markup

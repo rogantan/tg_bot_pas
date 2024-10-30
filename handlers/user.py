@@ -3,7 +3,7 @@ from datetime import datetime
 from init_bot import bot
 from telebot import formatting as form
 from telebot.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
-from functions import gen_markup_media, gen_markup_bool, User, Newsletter, Opros
+from functions import gen_markup_media, gen_markup_bool, gen_cancel_markup, gen_delete, User, Newsletter, Opros
 from db import (add_user, select_users_id, select_user, select_admin_id, select_admins_id, add_newsletter,
                 select_newsletters, save_variants, save_question, select_questions, get_question, get_variants,
                 update_statistic, select_total_statistic, poisk_slet)
@@ -55,9 +55,15 @@ def send_welcome(message: Message):
     bot.send_message(message.from_user.id, text="Если вы хотите лично мне написать, нажмите команду /write")
 
 
+@bot.message_handler(func=lambda message: message.text == "Отмена")
+def cancel(message):
+    bot.delete_state(message.from_user.id, message.chat.id)
+    bot.send_message(message.from_user.id, text=f"{form.hitalic('Отменено')}", parse_mode='HTML', reply_markup=gen_delete())
+
+
 @bot.message_handler(commands=['write'])
 def write(message: Message):
-    bot.send_message(message.from_user.id, text="Напишите ваше имя: ")
+    bot.send_message(message.from_user.id, text="Напишите ваше имя: ", reply_markup=gen_cancel_markup())
     bot.set_state(message.from_user.id, User.name)
 
 
@@ -92,24 +98,17 @@ def channel(message: Message):
     bot.send_message(message.from_user.id, text=f"{form.hitalic('Добро пожаловать!')}", reply_markup=markup, parse_mode='HTML')
 
 
-@is_admin
 @bot.message_handler(commands=['newsletter'])
+@is_admin
 def newsletter(message: Message):
-    bot.send_message(message.from_user.id, text="Введите текст рассылки:")
+    bot.send_message(message.from_user.id, text="Введите текст рассылки:", reply_markup=gen_cancel_markup())
     bot.set_state(message.from_user.id, Newsletter.text)
-    # admins_list = select_admins_id(str(message.from_user.id))
-    # if admins_list is not None:
-    #
-    # else:
-    #     bot.send_message(message.from_user.id, text=f"У вас {form.hbold('нет прав')} на эту команду...", parse_mode='HTML')
 
 
 @bot.message_handler(commands=['opros'])
 @is_admin
 def create_opros(message: Message):
-    # admins_list = select_admins_id(str(message.from_user.id))
-    # if admins_list is not None:
-    bot.send_message(message.from_user.id, text="Введите текст вопроса")
+    bot.send_message(message.from_user.id, text="Введите текст вопроса", reply_markup=gen_cancel_markup())
     bot.set_state(message.from_user.id, Opros.question_text)
 
 
@@ -163,7 +162,7 @@ def send_opros(message: Message):
             arr.append(f"{question[0]}) {question[1]}\n")
         text = "".join(arr)
         bot.send_message(message.from_user.id, text=text)
-        bot.send_message(message.from_user.id, text="Введите id вопроса, который хотите отправить")
+        bot.send_message(message.from_user.id, text="Введите id вопроса, который хотите отправить", reply_markup=gen_cancel_markup())
         bot.set_state(message.from_user.id, Opros.num_question)
 
 
@@ -187,6 +186,7 @@ def num_question(message: Message):
             users = select_users_id()
             for user in users:
                 bot.send_message(chat_id=user[0], text=text, reply_markup=markup)
+            bot.send_message(message.from_user.id, text="Готово!")
             bot.delete_state(message.from_user.id, message.chat.id)
 
 
@@ -202,7 +202,7 @@ def all_newsletters(message: Message):
             arr.append(f"{newsletter[0]}) {newsletter[1]}\nДата публикации {newsletter[2]}\n")
         text = "\n".join(arr)
         bot.send_message(message.from_user.id, text=text)
-        bot.send_message(message.from_user.id, text="Введите id рассылки, которую хотите отправить")
+        bot.send_message(message.from_user.id, text="Введите id рассылки, которую хотите отправить", reply_markup=gen_cancel_markup())
         bot.set_state(message.from_user.id, Newsletter.id)
 
 
@@ -266,18 +266,19 @@ def callback(call: CallbackQuery):
 @is_admin
 def photo(message: Message):
     users_list = select_users_id()
-    admins_list = select_admins_id(str(message.from_user.id))
-    if admins_list is not None:
-        for user in users_list:
-             bot.send_photo(chat_id=user[0], photo=message.photo[-1].file_id)
-    else:
-        bot.send_message(message.from_user.id, text="Вы не можете отправлять фотографии...")
+    for user in users_list:
+        bot.send_photo(chat_id=user[0], photo=message.photo[-1].file_id)
 
 
 @bot.message_handler(commands=['help_ai'])
 @is_admin
 def help_ai(message: Message):
-    pass
+    text = ("/newsletter - создать новую рассылку\n"
+            "/opros - создать новый опрос\n"
+            "/send_opros - отправить опрос всем пользователям\n"
+            "/send_newsletter - отправить рассылку всем пользователям\n"
+            "/total_statistic - статистика пользователей по опросам")
+    bot.send_message(message.from_user.id, text=text)
 
 
 @bot.message_handler(state='*')
