@@ -220,7 +220,7 @@ def newslet_id(message: Message):
         else:
             users = select_users_id()
             for user in users:
-                bot.send_message(chat_id=user[0], text=newsletter[0], parse_mode='MarkdownV2')
+                bot.send_message(chat_id=user[0], text=newsletter[0], parse_mode='Markdown')
             bot.send_message(message.from_user.id, text="Рассылка отправлена")
             bot.send_message(message.from_user.id, text="Фотографию добавляем?",
                              reply_markup=gen_markup_bool("yes_p", "no_p"))
