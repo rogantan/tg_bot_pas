@@ -52,7 +52,8 @@ def send_welcome(message: Message):
                                             f'- {form.hbold("на Встречах знакомств с инструментами Аксесс")} (я подробнее расскажу Вам об Access Bars, а Вы вживую увидите мою энергетику)',
                     parse_mode='HTML')
     time.sleep(5)
-    bot.send_message(message.from_user.id, text="Если вы хотите лично мне написать, нажмите команду /write")
+    bot.send_message(message.from_user.id, text="Если вы хотите лично мне написать, нажмите команду /write\n"
+                                                "Навигация и помощь - /help")
 
 
 @bot.message_handler(func=lambda message: message.text == "Отмена")
